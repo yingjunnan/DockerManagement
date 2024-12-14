@@ -156,39 +156,21 @@ def get_pull_progress(task_id):
     
     return Response(generate(), mimetype='text/event-stream')
 
-@app.route('/api/images/<image_id>', methods=['DELETE'])
+@app.route('/api/images/<path:image_id>', methods=['DELETE'])
 def delete_image(image_id):
     try:
         client = docker.from_env()
-        # 获取镜像信息
-        image = None
-        try:
-            image = client.images.get(image_id)
-        except docker.errors.ImageNotFound:
-            return jsonify({'error': '镜像不存在'}), 404
-            
-        # 如果镜像有多个标签，需要先删除所有标签
-        if image.tags:
-            for tag in image.tags:
-                try:
-                    client.images.remove(tag, force=False)
-                except docker.errors.APIError:
-                    # 如果删除标签失败，继续尝试下一个
-                    continue
-                    
-        # 最后尝试删除镜像本身
-        try:
-            client.images.remove(image_id, force=True)
-        except docker.errors.APIError as e:
-            if 'image is being used by running container' in str(e):
-                return jsonify({'error': '无法删除：镜像正在被容器使用'}), 400
-            return jsonify({'error': f'删除失败：{str(e)}'}), 400
-            
-        return jsonify({'message': '镜像删除成功'})
-        
+        # 移除 "sha256:" 前缀
+        if image_id.startswith('sha256:'):
+            image_id = image_id[7:]
+        client.images.remove(image_id, force=True)
+        return jsonify({'message': 'Image deleted successfully'})
+    except docker.errors.ImageNotFound:
+        return jsonify({'error': f'镜像 {image_id} 未找到'}), 404
+    except docker.errors.APIError as e:
+        return jsonify({'error': f'删除镜像失败: {str(e)}'}), 500
     except Exception as e:
-        app.logger.error(f'删除镜像时发生错误: {str(e)}')
-        return jsonify({'error': f'删除失败：{str(e)}'}), 400
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/images/tags', methods=['GET'])
 def get_image_tags():
