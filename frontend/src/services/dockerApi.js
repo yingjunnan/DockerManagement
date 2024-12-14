@@ -78,3 +78,30 @@ export const deleteImage = async (imageId) => {
     throw new Error('删除镜像失败：' + error.message)
   }
 }
+
+export const saveImage = async (imageName, fileName) => {
+  try {
+    const response = await axios.get(`${API_URL}/images/save/${encodeURIComponent(imageName)}`, {
+      responseType: 'blob'
+    })
+    
+    // 使用自定义文件名或默认文件名
+    const downloadFileName = (fileName || imageName.replace(/[/:]/g, '-')) + '.tar'
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', downloadFileName)
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(link)
+    
+    return true
+  } catch (error) {
+    throw new Error('保存镜像失败：' + error.message)
+  }
+}

@@ -18,7 +18,7 @@
               </div>
             </el-col>
           </el-row>
-          <el-row :gutter="20" style="margin-top: 20px;">
+          <el-row :gutter="20" style="margin-top: 50px;">
             <el-col :span="24">
               <div class="content-section">
                 <div class="section-header">
@@ -75,30 +75,73 @@ onMounted(() => {
 </script>
 
 <style>
+/* 重置默认样式 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* 应用容器 */
 .app-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  width: 100%;
   background-color: #f5f7fa;
 }
+
+/* 主布局容器 */
+.el-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 头部 */
 .header-content {
-  padding: 20px 0;
+  padding: 16px;
   text-align: center;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 20;
+  z-index: 100;
 }
+
 .header-content h2 {
   margin: 0;
   color: #303133;
 }
-.main-content {
-  width: 100%;
-  padding: 2px;
+
+/* 主要内容区域 */
+.el-main {
+  flex: 1;
+  padding: 20px;
+  overflow-x: hidden;
+  background-color: #f5f7fa;
 }
+
+.main-content {
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 内容区块 */
 .content-section {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
   padding: 20px;
+  margin-bottom: 20px;
+  height: 100%;
 }
+
+/* 区块头部 */
 .section-header {
   margin-bottom: 20px;
   border-bottom: 1px solid #ebeef5;
@@ -107,8 +150,51 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
 }
+
 .section-header h3 {
   margin: 0;
   color: #303133;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 768px) {
+  .main-content {
+    padding: 0 10px;
+  }
+  
+  .content-section {
+    padding: 15px;
+  }
+  
+  .section-header {
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .section-header h3 {
+    font-size: 16px;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #909399;
 }
 </style>

@@ -14,16 +14,28 @@
           {{ formatSize(scope.row.Size) }}
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="操作" width="150">
+      <el-table-column fixed="right" label="操作" width="220">
         <template #default="{ row }">
-          <el-button
-            type="danger"
-            size="small"
-            @click="showDeleteConfirm(row)"
-            :loading="row.deleting"
-          >
-            删除
-          </el-button>
+          <el-button-group>
+            <el-button
+              type="primary"
+              size="small"
+              @click="showSaveDialog(row)"
+              :loading="row.saving"
+            >
+              <el-icon><Download /></el-icon>
+              导出
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="showDeleteConfirm(row)"
+              :loading="row.deleting"
+            >
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
+          </el-button-group>
         </template>
       </el-table-column>
     </el-table>
@@ -64,13 +76,61 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 导出镜像对话框 -->
+    <el-dialog
+      v-model="saveDialogVisible"
+      title="导出镜像"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div v-if="selectedImage" class="save-dialog-content">
+        <el-form :model="saveForm" label-width="80px">
+          <el-form-item label="镜像标签">
+            <el-select 
+              v-model="saveForm.selectedTag" 
+              placeholder="选择要导出的标签"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="tag in selectedImage.RepoTags"
+                :key="tag"
+                :label="tag"
+                :value="tag"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="文件名">
+            <el-input v-model="saveForm.fileName" placeholder="输入保存的文件名">
+              <template #append>
+                <span>.tar</span>
+              </template>
+            </el-input>
+            <div class="form-tip">不填写则使用镜像标签作为文件名</div>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="saveDialogVisible = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="handleSaveConfirm" 
+            :loading="saving"
+          >
+            确认导出
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { deleteImage } from '../services/dockerApi'
+import { deleteImage, saveImage } from '../services/dockerApi'
+import { Download, Delete } from '@element-plus/icons-vue'
 
 const props = defineProps({
   images: {
@@ -86,7 +146,13 @@ const props = defineProps({
 const emit = defineEmits(['refresh'])
 
 const deleteConfirmVisible = ref(false)
+const saveDialogVisible = ref(false)
+const saving = ref(false)
 const selectedImage = ref(null)
+const saveForm = ref({
+  selectedTag: '',
+  fileName: ''
+})
 
 const formatSize = (size) => {
   return `${(size / 1024 / 1024).toFixed(2)} MB`
@@ -114,6 +180,37 @@ const handleDelete = async () => {
     // 从错误响应中获取具体的错误信息
     const errorMessage = error.response?.data?.error || error.message
     ElMessage.error(errorMessage)
+  }
+}
+
+const showSaveDialog = (image) => {
+  if (!image.RepoTags || image.RepoTags.length === 0) {
+    ElMessage.warning('该镜像没有标签，无法导出')
+    return
+  }
+
+  selectedImage.value = image
+  saveForm.value.selectedTag = image.RepoTags[0]
+  saveForm.value.fileName = image.RepoTags[0].replace(/[/:]/g, '-')
+  saveDialogVisible.value = true
+}
+
+const handleSaveConfirm = async () => {
+  if (!saveForm.value.selectedTag) {
+    ElMessage.warning('请选择要导出的镜像标签')
+    return
+  }
+
+  try {
+    saving.value = true
+    const fileName = saveForm.value.fileName || saveForm.value.selectedTag.replace(/[/:]/g, '-')
+    await saveImage(saveForm.value.selectedTag, fileName)
+    ElMessage.success('镜像导出成功')
+    saveDialogVisible.value = false
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    saving.value = false
   }
 }
 </script>
@@ -151,5 +248,21 @@ const handleDelete = async () => {
 .tag-item {
   margin-right: 8px;
   margin-bottom: 8px;
+}
+.el-button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.el-button [class*="el-icon-"] + span {
+  margin-left: 5px;
+}
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+.save-dialog-content {
+  padding: 0 20px;
 }
 </style>

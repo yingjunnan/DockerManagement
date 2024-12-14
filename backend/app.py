@@ -239,5 +239,30 @@ def get_image_tags():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/images/save/<path:image_name>')
+def save_image(image_name):
+    try:
+        # 获取 Docker 客户端
+        client = docker.from_env()
+        
+        # 获取镜像
+        image = client.images.get(image_name)
+        
+        # 创建响应对象，使用生成器流式传输数据
+        def generate():
+            for chunk in image.save(chunk_size=2097152):  # 2MB chunks
+                yield chunk
+        
+        response = Response(generate(), mimetype='application/x-tar')
+        response.headers['Content-Disposition'] = f'attachment; filename={image_name.replace("/", "-")}.tar'
+        return response
+        
+    except docker.errors.ImageNotFound:
+        return jsonify({'error': f'镜像 {image_name} 未找到'}), 404
+    except docker.errors.APIError as e:
+        return jsonify({'error': f'Docker API 错误: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'保存镜像时发生错误: {str(e)}'}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
