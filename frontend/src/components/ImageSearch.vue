@@ -1,21 +1,41 @@
 <template>
   <div class="image-search">
-    <el-form :inline="true" class="search-form" @submit.prevent="handleSearch">
-      <el-form-item>
-        <el-input
-          v-model="searchTerm"
-          placeholder="输入关键词搜索镜像"
-          clearable
-          @keyup.enter.prevent="handleSearch"
-        >
-          <template #append>
-            <el-button @click="handleSearch" :loading="loading">
-              搜索
-            </el-button>
+    <div class="search-container">
+      <el-form :model="form" class="search-form" @submit.prevent="handleSearch">
+        <el-form-item class="search-form-item">
+          <el-input
+            v-model="searchTerm"
+            placeholder="输入关键词搜索Docker镜像"
+            clearable
+            size="large"
+            class="search-input"
+            @keyup.enter.prevent="handleSearch"
+          >
+            <template #prefix>
+              <el-icon class="search-icon"><Search /></el-icon>
+            </template>
+            <template #append>
+              <el-button 
+                type="primary" 
+                size="large"
+                @click="handleSearch" 
+                :loading="loading"
+              >
+                搜索
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+      </el-form>
+      
+      <div class="search-tips" v-if="!searchResults.length && !loading">
+        <el-empty description="输入关键词开始搜索Docker镜像">
+          <template #image>
+            <el-icon :size="60" class="search-empty-icon"><Search /></el-icon>
           </template>
-        </el-input>
-      </el-form-item>
-    </el-form>
+        </el-empty>
+      </div>
+    </div>
 
     <el-dialog
       v-model="searchDialogVisible"
@@ -148,13 +168,14 @@
 <script>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star } from '@element-plus/icons-vue'
+import { Star, Search } from '@element-plus/icons-vue'
 import { searchImages, pullImage, getImageTags, subscribePullProgress } from '../services/dockerApi'
 
 export default {
   name: 'ImageSearch',
   components: {
-    Star
+    Star,
+    Search
   },
   emits: ['image-pulled', 'refresh'],
   setup(props, { emit }) {
@@ -324,68 +345,119 @@ export default {
 
 <style scoped>
 .image-search {
-  padding: 0 20px;
+  padding: 20px;
 }
+
+.search-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+}
+
 .search-form {
   margin-bottom: 20px;
 }
+
+.search-form-item {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.search-input {
+  --el-input-height: 50px;
+  font-size: 16px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  padding-left: 15px;
+}
+
+.search-icon {
+  font-size: 20px;
+  color: #909399;
+  margin-right: 8px;
+}
+
+.search-tips {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.search-empty-icon {
+  color: #909399;
+}
+
 .loading-container {
   padding: 20px 0;
 }
+
 .results-container {
   margin-top: 20px;
 }
+
 .image-name {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .stars {
   display: flex;
   align-items: center;
   gap: 4px;
   color: #e6a23c;
 }
+
 .no-results {
   padding: 40px 0;
   text-align: center;
 }
+
 .pull-form {
   text-align: left;
 }
+
 .pull-form .description {
   color: #666;
   margin: 10px 0 20px;
 }
+
 .tag-label {
   color: #666;
   font-weight: bold;
 }
+
 .pull-progress {
   text-align: center;
   padding: 20px 0;
 }
+
 .pull-message {
   margin-top: 16px;
   color: #606266;
   font-size: 14px;
 }
+
 .tags-loading {
   padding: 20px 0;
 }
+
 .tag-name {
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 8px;
 }
+
 .tag-info {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
+
 .tag-info-item {
   font-size: 12px;
 }
+
 .tag-details {
   padding: 8px 0;
   width: 100%;
